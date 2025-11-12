@@ -78,16 +78,12 @@ export const GameContextProvider = ({ children }) => {
         dispatch({
             type: 'move',
             payload
-            // item,
-            // toRank,
-            // toFile
         })
 
         // WARNING this state may update even if dispatch move doesn't work
         setMoveCount(prevMoveCount => prevMoveCount + 1)
     }
 
-    // TODO refactor canMoveMap - how can we simplify this logic?
     const compute = {
         'K': { canMove: ({type, rank, file, toRank, toFile}) => {
             if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
@@ -106,6 +102,24 @@ export const GameContextProvider = ({ children }) => {
             const dF = Math.abs(toFile - file)
             const dR = toRank - rank
             return dF === 0 && dR === ((extractColor(type) === PieceColor.LIGHT) ? -1 : 1)
+        }},
+        'B': { canMove: ({type, rank, file, toRank, toFile}) => {
+            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            const dF = Math.abs(toFile - file)
+            const dR = Math.abs(toRank - rank)
+            return dF === dR
+        }},
+        'R': { canMove: ({type, rank, file, toRank, toFile}) => {
+            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            const dF = Math.abs(toFile - file)
+            const dR = Math.abs(toRank - rank)
+            return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1)
+        }},
+        'Q': { canMove: ({type, rank, file, toRank, toFile}) => {
+            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            const dF = Math.abs(toFile - file)
+            const dR = Math.abs(toRank - rank)
+            return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1) || (dF === dR)
         }}
     }
 
