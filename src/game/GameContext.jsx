@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useReducer, useState } from "react"
-import { Constants, PieceType } from "./Constants"
+import { createContext, useContext, useEffect, useReducer, useRef } from "react"
+import { Constants, extractColor, PieceType } from "./Constants"
 
 const GameContext = createContext()
 
@@ -39,7 +39,10 @@ export const GameContextProvider = ({ children }) => {
         }
     )
 
+    const gameRef = useRef(game)
+
     useEffect(() => {
+        gameRef.current = game
         console.log(game)
     }, [game])
 
@@ -79,10 +82,21 @@ export const GameContextProvider = ({ children }) => {
 
     const canMoveMap = new Map()
     canMoveMap.set(PieceType.KING, (item, toRank, toFile) => {
+        if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(item.id)) return false
+        
         const { rank, file } = item
         const dF = Math.abs(toFile - file)
         const dR = Math.abs(toRank - rank)
         return (dF <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
+    })
+    
+    canMoveMap.set(PieceType.KNIGHT, (item, toRank, toFile) => {
+        if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(item.id)) return false
+
+        const { rank, file} = item
+        const dF = Math.abs(toFile - file)
+        const dR = Math.abs(toRank - rank)
+        return (dF === 2 && dR === 1) || (dF === 1 && dR === 2)
     })
 
     const moveMap = new Map()

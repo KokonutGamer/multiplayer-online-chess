@@ -28,5 +28,5 @@ export const PieceColor = {
     DARK: 'D'
 }
 
-export const extractColor = (piece) => (piece[0]);
+export const extractColor = (piece) => (piece === extractType(piece) ? PieceColor.LIGHT : PieceColor.DARK);
 export const extractType = (piece) => (piece.toUpperCase());
