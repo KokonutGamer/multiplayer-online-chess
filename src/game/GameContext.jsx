@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useReducer, useRef } from "react"
-import { Constants, extractColor, PieceType } from "./Constants"
+import { Constants, extractColor, PieceColor, PieceType } from "./Constants"
 
 const GameContext = createContext()
 
@@ -92,11 +92,20 @@ export const GameContextProvider = ({ children }) => {
     
     canMoveMap.set(PieceType.KNIGHT, (item, toRank, toFile) => {
         if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(item.id)) return false
-
+        
         const { rank, file} = item
         const dF = Math.abs(toFile - file)
         const dR = Math.abs(toRank - rank)
         return (dF === 2 && dR === 1) || (dF === 1 && dR === 2)
+    })
+    
+    canMoveMap.set(PieceType.PAWN, (item, toRank, toFile) => {
+        if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(item.id)) return false
+        
+        const { rank, file } = item
+        const dF = Math.abs(toFile - file)
+        const dR = toRank - rank
+        return dF === 0 && dR === ((extractColor(item.id) === PieceColor.LIGHT) ? -1 : 1)
     })
 
     const moveMap = new Map()
