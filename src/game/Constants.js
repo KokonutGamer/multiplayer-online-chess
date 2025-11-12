@@ -29,4 +29,3 @@ export const PieceColor = {
 }
 
 export const colorOf = (piece) => (piece === piece.toUpperCase() ? PieceColor.WHITE : PieceColor.BLACK);
-export const extractType = (piece) => (piece.toUpperCase());

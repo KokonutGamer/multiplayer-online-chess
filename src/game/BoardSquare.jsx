@@ -1,6 +1,6 @@
 import Square from "./Square"
 import { useDrop } from "react-dnd"
-import { Constants, extractType, PieceType } from "./Constants"
+import { Constants } from "./Constants"
 import { useGame } from "./GameContext"
 import Overlay from "./Overlay"
 
