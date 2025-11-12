@@ -1,0 +1,53 @@
+:root {
+  --board-size: 75vh;
+}
+
+body {
+  margin: 0;
+  width: 100%;
+  height: 100vh;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.board {
+  box-sizing: border-box;
+  border: 4px solid black;
+  width: var(--board-size);
+  height: var(--board-size);
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.square {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.piece {
+  background-color: transparent;
+  width: 90%;
+  height: 90%;
+}
+
+.piece:hover {
+  cursor: default;
+}
+
+.highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+  opacity: 0.5;
+}
