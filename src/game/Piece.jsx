@@ -5,7 +5,7 @@ function Piece({ type, rank, file }) {
     const [{ isDragging }, drag] = useDrag(
         () => ({
             type: type,
-            item: { id: type, rank, file },
+            item: { type, rank, file },
             collect: (monitor) => ({
                 isDragging: !!monitor.isDragging()
             })

@@ -49,23 +49,24 @@ export const GameContextProvider = ({ children }) => {
     }, [game, moveCount])
 
     function gameReducer(prevGame, action) {
+        console.log(action)
+        console.log(action.payload)
         switch (action.type) {
             case 'move':
-                const { item, toRank, toFile } = action
-                const { rank, file } = item
+                const { type, rank, file, toRank, toFile } = action.payload
                 if (!prevGame[rank][file]) {
                     console.error("ERROR: No piece exists on this square", rank, file)
                     return prevGame
                 }
 
-                if (prevGame[rank][file] !== item.id) {
-                    console.error("ERROR: The piece on the board does not match the specified piece", item.id)
+                if (prevGame[rank][file] !== type) {
+                    console.error("ERROR: The piece on the board does not match the specified piece", type)
                     return prevGame
                 }
 
                 const gameClone = structuredClone(prevGame)
                 gameClone[rank][file] = 0
-                gameClone[toRank][toFile] = item.id
+                gameClone[toRank][toFile] = type
                 return gameClone
             default:
                 console.error("ERROR: Unknown action type dispatched")
@@ -73,50 +74,43 @@ export const GameContextProvider = ({ children }) => {
         }
     }
 
-    function handleMove(item, toRank, toFile) {
+    function handleMove(payload) {
         dispatch({
             type: 'move',
-            item,
-            toRank,
-            toFile
+            payload
+            // item,
+            // toRank,
+            // toFile
         })
 
         // WARNING this state may update even if dispatch move doesn't work
         setMoveCount(prevMoveCount => prevMoveCount + 1)
     }
 
-    const canMoveMap = new Map()
-    canMoveMap.set(PieceType.KING, (item, toRank, toFile) => {
-        if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(item.id)) return false
-        
-        const { rank, file } = item
-        const dF = Math.abs(toFile - file)
-        const dR = Math.abs(toRank - rank)
-        return (dF <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
-    })
-    
-    canMoveMap.set(PieceType.KNIGHT, (item, toRank, toFile) => {
-        if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(item.id)) return false
-        
-        const { rank, file} = item
-        const dF = Math.abs(toFile - file)
-        const dR = Math.abs(toRank - rank)
-        return (dF === 2 && dR === 1) || (dF === 1 && dR === 2)
-    })
-    
-    canMoveMap.set(PieceType.PAWN, (item, toRank, toFile) => {
-        if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(item.id)) return false
-        
-        const { rank, file } = item
-        const dF = Math.abs(toFile - file)
-        const dR = toRank - rank
-        return dF === 0 && dR === ((extractColor(item.id) === PieceColor.LIGHT) ? -1 : 1)
-    })
-
-    const moveMap = new Map()
+    // TODO refactor canMoveMap - how can we simplify this logic?
+    const compute = {
+        'K': { canMove: ({type, rank, file, toRank, toFile}) => {
+            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            const dF = Math.abs(toFile - file)
+            const dR = Math.abs(toRank - rank)
+            return (dF <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
+        }},
+        'N': { canMove: ({type, rank, file, toRank, toFile}) => {
+            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            const dF = Math.abs(toFile - file)
+            const dR = Math.abs(toRank - rank)
+            return (dF === 2 && dR === 1) || (dF === 1 && dR === 2)
+        }},
+        'P': { canMove: ({type, rank, file, toRank, toFile}) => {
+            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            const dF = Math.abs(toFile - file)
+            const dR = toRank - rank
+            return dF === 0 && dR === ((extractColor(type) === PieceColor.LIGHT) ? -1 : 1)
+        }}
+    }
 
     return (
-        <GameContext.Provider value={{ game, canMoveMap, handleMove, moveCount }}>
+        <GameContext.Provider value={{ game, compute, handleMove, moveCount }}>
             {children}
         </GameContext.Provider>
     )

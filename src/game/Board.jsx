@@ -2,7 +2,6 @@ import BoardSquare from "./BoardSquare"
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import Piece from "./Piece"
-import { extractColor, extractType } from "./Constants"
 import { useGame } from "./GameContext"
 
 function renderSquare(rank, file, board) {
