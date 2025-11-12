@@ -115,9 +115,30 @@ export const GameContextProvider = ({ children }) => {
         'R': {
             canMove: ({ type, rank, file, toRank, toFile }) => {
                 if (sameColorPieces(rank, file, toRank, toFile)) return false
-                const dF = Math.abs(toFile - file)
-                const dR = Math.abs(toRank - rank)
-                return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1)
+                const dF = toFile - file
+                const dR = toRank - rank
+                if ((dF !== 0 || dR === 0) && (dF === 0 || dR !== 0)) return false
+                
+                // check path
+                if(dF !== 0) {
+                    const nF = dF / Math.abs(dF)
+                    let currFile = file + nF
+                    while(currFile !== toFile) {
+                        if (sameColorPieces(rank, file, rank, currFile) ||
+                            diffColorPieces(rank, file, rank, currFile)) return false
+                        currFile += nF
+                    }
+                } else {
+                    const nR = dR / Math.abs(dR)
+                    let currRank = rank + nR
+                    while(currRank !== toRank) {
+                        if (sameColorPieces(rank, file, currRank, file) ||
+                            diffColorPieces(rank, file, currRank, file)) return false
+                        currRank += nR
+                    }
+                }
+                
+                return true
             }
         },
         'B': {
