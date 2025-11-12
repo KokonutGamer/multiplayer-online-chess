@@ -83,70 +83,96 @@ export const GameContextProvider = ({ children }) => {
     function sameColorPieces(rank, file, toRank, toFile) {
         const piece = gameRef.current[rank][file]
         const other = gameRef.current[toRank][toFile]
-        if(!other) return false
+        if (!other) return false
         return colorOf(piece) === colorOf(other)
     }
-    
+
     function diffColorPieces(rank, file, toRank, toFile) {
         const piece = gameRef.current[rank][file]
         const other = gameRef.current[toRank][toFile]
-        if(!other) return false
+        if (!other) return false
         return colorOf(piece) !== colorOf(other)
     }
 
     // TODO implement pins and checks
     const compute = {
-        'K': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(sameColorPieces(rank, file, toRank, toFile)) return false
-            const dF = Math.abs(toFile - file)
-            const dR = Math.abs(toRank - rank)
-            return (dF <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
-        }},
-        'Q': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(sameColorPieces(rank, file, toRank, toFile)) return false
-            const dF = Math.abs(toFile - file)
-            const dR = Math.abs(toRank - rank)
-            return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1) || (dF === dR)
-        }},
-        'R': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(sameColorPieces(rank, file, toRank, toFile)) return false
-            const dF = Math.abs(toFile - file)
-            const dR = Math.abs(toRank - rank)
-            return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1)
-        }},
-        'B': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(sameColorPieces(rank, file, toRank, toFile)) return false
-            const dF = Math.abs(toFile - file)
-            const dR = Math.abs(toRank - rank)
-            return dF === dR
-        }},
-        'N': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(sameColorPieces(rank, file, toRank, toFile)) return false
-            const dF = Math.abs(toFile - file)
-            const dR = Math.abs(toRank - rank)
-            return (dF === 2 && dR === 1) || (dF === 1 && dR === 2)
-        }},
-        'P': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(sameColorPieces(rank, file, toRank, toFile)) return false
-            const dF = Math.abs(toFile - file)
-            const dR = toRank - rank
-
-            const isWhite = colorOf(type) === PieceColor.WHITE
-
-            // diagonal captures
-            if(diffColorPieces(rank, file, toRank, toFile)) {
-                return (dF === 1 && dR === (isWhite ? -1 : 1))
+        'K': {
+            canMove: ({ type, rank, file, toRank, toFile }) => {
+                if (sameColorPieces(rank, file, toRank, toFile)) return false
+                const dF = Math.abs(toFile - file)
+                const dR = Math.abs(toRank - rank)
+                return (dF <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
             }
-
-            // home rank
-            if(isWhite && rank === 6) {
-                return dF === 0 && dR < 0 && dR >= -2
-            } else if(!isWhite && rank === 1) {
-                return dF === 0 && dR > 0 && dR <= 2
+        },
+        'Q': {
+            canMove: ({ type, rank, file, toRank, toFile }) => {
+                if (sameColorPieces(rank, file, toRank, toFile)) return false
+                const dF = Math.abs(toFile - file)
+                const dR = Math.abs(toRank - rank)
+                return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1) || (dF === dR)
             }
+        },
+        'R': {
+            canMove: ({ type, rank, file, toRank, toFile }) => {
+                if (sameColorPieces(rank, file, toRank, toFile)) return false
+                const dF = Math.abs(toFile - file)
+                const dR = Math.abs(toRank - rank)
+                return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1)
+            }
+        },
+        'B': {
+            canMove: ({ type, rank, file, toRank, toFile }) => {
+                if (sameColorPieces(rank, file, toRank, toFile)) return false
+                const dF = toFile - file
+                const dR = toRank - rank
+                if (Math.abs(dF) !== Math.abs(dR)) return false
 
-            return dF === 0 && dR === (isWhite ? -1 : 1)
-        }}
+                // check path
+                const nF = dF / Math.abs(dF)
+                const nR = dR / Math.abs(dR)
+                let currFile = file + nF
+                let currRank = rank + nR
+                while (currRank !== toRank && currFile !== toFile) {
+                    if (sameColorPieces(rank, file, currRank, currFile) ||
+                        diffColorPieces(rank, file, currRank, currFile)) return false
+                    currFile += nF
+                    currRank += nR
+                }
+
+                return true
+            }
+        },
+        'N': {
+            canMove: ({ type, rank, file, toRank, toFile }) => {
+                if (sameColorPieces(rank, file, toRank, toFile)) return false
+                const dF = Math.abs(toFile - file)
+                const dR = Math.abs(toRank - rank)
+                return (dF === 2 && dR === 1) || (dF === 1 && dR === 2)
+            }
+        },
+        'P': {
+            canMove: ({ type, rank, file, toRank, toFile }) => {
+                if (sameColorPieces(rank, file, toRank, toFile)) return false
+                const dF = Math.abs(toFile - file)
+                const dR = toRank - rank
+
+                const isWhite = colorOf(type) === PieceColor.WHITE
+
+                // diagonal captures
+                if (diffColorPieces(rank, file, toRank, toFile)) {
+                    return (dF === 1 && dR === (isWhite ? -1 : 1))
+                }
+
+                // home rank
+                if (isWhite && rank === 6) {
+                    return dF === 0 && dR < 0 && dR >= -2
+                } else if (!isWhite && rank === 1) {
+                    return dF === 0 && dR > 0 && dR <= 2
+                }
+
+                return dF === 0 && dR === (isWhite ? -1 : 1)
+            }
+        }
     }
 
     return (
