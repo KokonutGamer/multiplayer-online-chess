@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useReducer, useRef } from "react"
+import { createContext, useContext, useEffect, useReducer, useRef, useState } from "react"
 import { Constants, extractColor, PieceColor, PieceType } from "./Constants"
 
 const GameContext = createContext()
@@ -39,12 +39,14 @@ export const GameContextProvider = ({ children }) => {
         }
     )
 
+    const [moveCount, setMoveCount] = useState(0)
+
     const gameRef = useRef(game)
 
     useEffect(() => {
         gameRef.current = game
-        console.log(game)
-    }, [game])
+        console.log(moveCount)
+    }, [game, moveCount])
 
     function gameReducer(prevGame, action) {
         switch (action.type) {
@@ -78,6 +80,9 @@ export const GameContextProvider = ({ children }) => {
             toRank,
             toFile
         })
+
+        // WARNING this state may update even if dispatch move doesn't work
+        setMoveCount(prevMoveCount => prevMoveCount + 1)
     }
 
     const canMoveMap = new Map()
@@ -111,7 +116,7 @@ export const GameContextProvider = ({ children }) => {
     const moveMap = new Map()
 
     return (
-        <GameContext.Provider value={{ game, canMoveMap, handleMove }}>
+        <GameContext.Provider value={{ game, canMoveMap, handleMove, moveCount }}>
             {children}
         </GameContext.Provider>
     )
