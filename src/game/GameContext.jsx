@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useReducer, useRef, useState } from "react"
-import { Constants, extractColor, PieceColor, PieceType } from "./Constants"
+import { Constants, colorOf, PieceColor, PieceType } from "./Constants"
 
 const GameContext = createContext()
 
@@ -40,17 +40,13 @@ export const GameContextProvider = ({ children }) => {
     )
 
     const [moveCount, setMoveCount] = useState(0)
-
     const gameRef = useRef(game)
 
     useEffect(() => {
         gameRef.current = game
-        console.log(moveCount)
     }, [game, moveCount])
 
     function gameReducer(prevGame, action) {
-        console.log(action)
-        console.log(action.payload)
         switch (action.type) {
             case 'move':
                 const { type, rank, file, toRank, toFile } = action.payload
@@ -84,39 +80,46 @@ export const GameContextProvider = ({ children }) => {
         setMoveCount(prevMoveCount => prevMoveCount + 1)
     }
 
+    function sameColorPieces(rank, file, toRank, toFile) {
+        const piece = gameRef.current[rank][file]
+        const other = gameRef.current[toRank][toFile]
+        if(!other) return false
+        return colorOf(piece) === colorOf(other)
+    }
+
     const compute = {
         'K': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            if(sameColorPieces(rank, file, toRank, toFile)) return false
             const dF = Math.abs(toFile - file)
             const dR = Math.abs(toRank - rank)
             return (dF <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
         }},
         'N': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            if(sameColorPieces(rank, file, toRank, toFile)) return false
             const dF = Math.abs(toFile - file)
             const dR = Math.abs(toRank - rank)
             return (dF === 2 && dR === 1) || (dF === 1 && dR === 2)
         }},
         'P': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            if(sameColorPieces(rank, file, toRank, toFile)) return false
             const dF = Math.abs(toFile - file)
             const dR = toRank - rank
-            return dF === 0 && dR === ((extractColor(type) === PieceColor.LIGHT) ? -1 : 1)
+            return dF === 0 && dR === ((colorOf(type) === PieceColor.WHITE) ? -1 : 1)
         }},
         'B': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            if(sameColorPieces(rank, file, toRank, toFile)) return false
             const dF = Math.abs(toFile - file)
             const dR = Math.abs(toRank - rank)
             return dF === dR
         }},
         'R': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            if(sameColorPieces(rank, file, toRank, toFile)) return false
             const dF = Math.abs(toFile - file)
             const dR = Math.abs(toRank - rank)
             return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1)
         }},
         'Q': { canMove: ({type, rank, file, toRank, toFile}) => {
-            if(gameRef.current[toRank][toFile] && extractColor(gameRef.current[toRank][toFile]) === extractColor(type)) return false
+            if(sameColorPieces(rank, file, toRank, toFile)) return false
             const dF = Math.abs(toFile - file)
             const dR = Math.abs(toRank - rank)
             return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1) || (dF === dR)
@@ -124,7 +127,7 @@ export const GameContextProvider = ({ children }) => {
     }
 
     return (
-        <GameContext.Provider value={{ game, compute, handleMove, moveCount }}>
+        <GameContext.Provider value={{ game, moveCount, compute, handleMove }}>
             {children}
         </GameContext.Provider>
     )
