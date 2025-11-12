@@ -5,13 +5,11 @@ const GameContext = createContext()
 
 export const GameContextProvider = ({ children }) => {
     const [game, setGame] = useState(() => {
-        const board = []
-        for (let r = 0; r < 8; r++) {
-            board[r] = []
-            for (let f = 0; f < 8; f++) {
-                board[r][f] = 0
-            }
-        }
+        // Cool empty board construction
+        // Array.from creates an array from an iterable
+        // Shorthand array object with length property
+        // Map each element in the array object to an array of size 8 filled with 0's
+        const board = Array.from({ length: 8}, () => Array(8).fill(0))
 
         // TODO refactor to laod in different board states
         board[7][0] = Constants.WHITE_ROOK
