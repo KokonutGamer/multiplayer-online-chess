@@ -95,6 +95,7 @@ export const GameContextProvider = ({ children }) => {
     }
 
     // TODO implement pins and checks
+    // TODO refactor compute to use some kind of cache as canMove renders each frame a piece is dragging
     const compute = {
         'K': {
             canMove: ({ type, rank, file, toRank, toFile }) => {
@@ -107,9 +108,22 @@ export const GameContextProvider = ({ children }) => {
         'Q': {
             canMove: ({ type, rank, file, toRank, toFile }) => {
                 if (sameColorPieces(rank, file, toRank, toFile)) return false
-                const dF = Math.abs(toFile - file)
-                const dR = Math.abs(toRank - rank)
-                return (dF === 0 && dR >= 1) || (dR === 0 && dF >= 1) || (dF === dR)
+                const dF = toFile - file
+                const dR = toRank - rank
+                if ((dF !== 0 || dR === 0) && (dF === 0 || dR !== 0) && Math.abs(dF) !== Math.abs(dR)) return false
+
+                const nF = (dF) ? dF / Math.abs(dF) : 0
+                const nR = (dR) ? dR / Math.abs(dR) : 0
+                let currFile = file + nF
+                let currRank = rank + nR
+                while (currRank !== toRank || currFile !== toFile) {
+                    if (sameColorPieces(rank, file, currRank, currFile) ||
+                        diffColorPieces(rank, file, currRank, currFile)) return false
+                    currFile += nF
+                    currRank += nR
+                }
+
+                return true
             }
         },
         'R': {
@@ -118,12 +132,12 @@ export const GameContextProvider = ({ children }) => {
                 const dF = toFile - file
                 const dR = toRank - rank
                 if ((dF !== 0 || dR === 0) && (dF === 0 || dR !== 0)) return false
-                
+
                 // check path
-                if(dF !== 0) {
+                if (dF !== 0) {
                     const nF = dF / Math.abs(dF)
                     let currFile = file + nF
-                    while(currFile !== toFile) {
+                    while (currFile !== toFile) {
                         if (sameColorPieces(rank, file, rank, currFile) ||
                             diffColorPieces(rank, file, rank, currFile)) return false
                         currFile += nF
@@ -131,13 +145,13 @@ export const GameContextProvider = ({ children }) => {
                 } else {
                     const nR = dR / Math.abs(dR)
                     let currRank = rank + nR
-                    while(currRank !== toRank) {
+                    while (currRank !== toRank) {
                         if (sameColorPieces(rank, file, currRank, file) ||
                             diffColorPieces(rank, file, currRank, file)) return false
                         currRank += nR
                     }
                 }
-                
+
                 return true
             }
         },
@@ -153,7 +167,7 @@ export const GameContextProvider = ({ children }) => {
                 const nR = dR / Math.abs(dR)
                 let currFile = file + nF
                 let currRank = rank + nR
-                while (currRank !== toRank && currFile !== toFile) {
+                while (currRank !== toRank || currFile !== toFile) {
                     if (sameColorPieces(rank, file, currRank, currFile) ||
                         diffColorPieces(rank, file, currRank, currFile)) return false
                     currFile += nF
