@@ -26,12 +26,12 @@ function renderPiece(rank, file, board) {
 }
 
 function Board() {
-    const { game } = useGame()
+    const { game2 } = useGame()
 
     const squares = []
     for (let r = 0; r < 8; r++) {
         for (let f = 0; f < 8; f++) {
-            squares.push(renderSquare(r, f, game))
+            squares.push(renderSquare(r, f, game2))
         }
     }
 
