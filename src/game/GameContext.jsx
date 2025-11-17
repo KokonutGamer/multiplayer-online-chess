@@ -44,6 +44,38 @@ export const GameContextProvider = ({ children }) => {
 
     useEffect(() => {
         gameRef.current = game
+
+        console.log(gameRef.current)
+
+        // find position of king
+        const kingPosition = { rank: -1, file: -1 }
+        const colorToMove = moveCount % 2 === 0 ? PieceColor.WHITE : PieceColor.BLACK
+        for (let r = 0; r < 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                const piece = gameRef.current[r][f]
+                if (!piece || colorOf(piece) !== colorToMove || piece.toUpperCase() !== PieceType.KING) continue
+                kingPosition.rank = r
+                kingPosition.file = f
+            }
+        }
+
+        console.log(kingPosition)
+
+        // check if king is in check
+        let inCheck = false
+        for (let r = 0; r < 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                const piece = gameRef.current[r][f]
+                if (!piece || colorOf(piece) === colorToMove) continue
+                console.log(piece, r, f)
+                if (compute[piece.toUpperCase()].canMove({type: piece, rank: r, file: f, toRank: kingPosition.rank, toFile: kingPosition.file})) {
+                    inCheck = true
+                }
+            }
+        }
+
+        console.log(`King in check? ${inCheck}`)
+
     }, [game, moveCount])
 
     function gameReducer(prevGame, action) {
@@ -81,6 +113,7 @@ export const GameContextProvider = ({ children }) => {
     }
 
     function sameColorPieces(rank, file, toRank, toFile) {
+        console.log(rank, file, toRank, toFile)
         const piece = gameRef.current[rank][file]
         const other = gameRef.current[toRank][toFile]
         if (!other) return false
