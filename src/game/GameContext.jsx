@@ -49,7 +49,7 @@ export const GameContextProvider = ({ children }) => {
             for (let f = 0; f < 8; f++) {
                 const piece = game[r][f]
                 if (!piece || colorOf(piece) === colorToMove) continue
-                if (compute[piece.toUpperCase()].canMove({ type: piece, rank: r, file: f, toRank: kingRank, toFile: kingFile })) {
+                if (compute[piece.toUpperCase()].canMove({ type: piece, rank: r, file: f, toRank: kingRank, toFile: kingFile, game })) {
                     return true
                 }
             }
@@ -62,7 +62,7 @@ export const GameContextProvider = ({ children }) => {
         const piece = gameRef.current[rank][file]
         for (let r = 0; r < 8; r++) {
             for (let f = 0; f < 8; f++) {
-                if (!compute[piece.toUpperCase()].canMove({ type: piece, rank, file, toRank: r, toFile: f })) continue
+                if (!compute[piece.toUpperCase()].canMove({ type: piece, rank, file, toRank: r, toFile: f, game: gameRef.current })) continue
                 const copy = structuredClone(gameRef.current)
                 copy[rank][file] = 0
                 copy[r][f] = piece
@@ -150,16 +150,16 @@ export const GameContextProvider = ({ children }) => {
         setMoveCount(prevMoveCount => prevMoveCount + 1)
     }
 
-    function sameColorPieces(rank, file, toRank, toFile) {
-        const piece = gameRef.current[rank][file]
-        const other = gameRef.current[toRank][toFile]
+    function sameColorPieces(rank, file, toRank, toFile, game) {
+        const piece = game[rank][file]
+        const other = game[toRank][toFile]
         if (!other) return false
         return colorOf(piece) === colorOf(other)
     }
 
-    function diffColorPieces(rank, file, toRank, toFile) {
-        const piece = gameRef.current[rank][file]
-        const other = gameRef.current[toRank][toFile]
+    function diffColorPieces(rank, file, toRank, toFile, game) {
+        const piece = game[rank][file]
+        const other = game[toRank][toFile]
         if (!other) return false
         return colorOf(piece) !== colorOf(other)
     }
@@ -168,16 +168,16 @@ export const GameContextProvider = ({ children }) => {
     // TODO refactor compute to use some kind of cache as canMove renders each frame a piece is dragging
     const compute = {
         'K': {
-            canMove: ({ type, rank, file, toRank, toFile }) => {
-                if (sameColorPieces(rank, file, toRank, toFile)) return false
+            canMove: ({ type, rank, file, toRank, toFile, game }) => {
+                if (sameColorPieces(rank, file, toRank, toFile, game)) return false
                 const dF = Math.abs(toFile - file)
                 const dR = Math.abs(toRank - rank)
                 return (dF <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
             }
         },
         'Q': {
-            canMove: ({ type, rank, file, toRank, toFile }) => {
-                if (sameColorPieces(rank, file, toRank, toFile)) return false
+            canMove: ({ type, rank, file, toRank, toFile, game }) => {
+                if (sameColorPieces(rank, file, toRank, toFile, game)) return false
                 const dF = toFile - file
                 const dR = toRank - rank
                 if ((dF !== 0 || dR === 0) && (dF === 0 || dR !== 0) && Math.abs(dF) !== Math.abs(dR)) return false
@@ -187,8 +187,8 @@ export const GameContextProvider = ({ children }) => {
                 let currFile = file + nF
                 let currRank = rank + nR
                 while (currRank !== toRank || currFile !== toFile) {
-                    if (sameColorPieces(rank, file, currRank, currFile) ||
-                        diffColorPieces(rank, file, currRank, currFile)) return false
+                    if (sameColorPieces(rank, file, currRank, currFile, game) ||
+                        diffColorPieces(rank, file, currRank, currFile, game)) return false
                     currFile += nF
                     currRank += nR
                 }
@@ -197,8 +197,8 @@ export const GameContextProvider = ({ children }) => {
             }
         },
         'R': {
-            canMove: ({ type, rank, file, toRank, toFile }) => {
-                if (sameColorPieces(rank, file, toRank, toFile)) return false
+            canMove: ({ type, rank, file, toRank, toFile, game }) => {
+                if (sameColorPieces(rank, file, toRank, toFile, game)) return false
                 const dF = toFile - file
                 const dR = toRank - rank
                 if ((dF !== 0 || dR === 0) && (dF === 0 || dR !== 0)) return false
@@ -208,16 +208,16 @@ export const GameContextProvider = ({ children }) => {
                     const nF = dF / Math.abs(dF)
                     let currFile = file + nF
                     while (currFile !== toFile) {
-                        if (sameColorPieces(rank, file, rank, currFile) ||
-                            diffColorPieces(rank, file, rank, currFile)) return false
+                        if (sameColorPieces(rank, file, rank, currFile, game) ||
+                            diffColorPieces(rank, file, rank, currFile, game)) return false
                         currFile += nF
                     }
                 } else {
                     const nR = dR / Math.abs(dR)
                     let currRank = rank + nR
                     while (currRank !== toRank) {
-                        if (sameColorPieces(rank, file, currRank, file) ||
-                            diffColorPieces(rank, file, currRank, file)) return false
+                        if (sameColorPieces(rank, file, currRank, file, game) ||
+                            diffColorPieces(rank, file, currRank, file, game)) return false
                         currRank += nR
                     }
                 }
@@ -226,8 +226,8 @@ export const GameContextProvider = ({ children }) => {
             }
         },
         'B': {
-            canMove: ({ type, rank, file, toRank, toFile }) => {
-                if (sameColorPieces(rank, file, toRank, toFile)) return false
+            canMove: ({ type, rank, file, toRank, toFile, game }) => {
+                if (sameColorPieces(rank, file, toRank, toFile, game)) return false
                 const dF = toFile - file
                 const dR = toRank - rank
                 if (Math.abs(dF) !== Math.abs(dR)) return false
@@ -238,8 +238,8 @@ export const GameContextProvider = ({ children }) => {
                 let currFile = file + nF
                 let currRank = rank + nR
                 while (currRank !== toRank || currFile !== toFile) {
-                    if (sameColorPieces(rank, file, currRank, currFile) ||
-                        diffColorPieces(rank, file, currRank, currFile)) return false
+                    if (sameColorPieces(rank, file, currRank, currFile, game) ||
+                        diffColorPieces(rank, file, currRank, currFile, game)) return false
                     currFile += nF
                     currRank += nR
                 }
@@ -248,23 +248,23 @@ export const GameContextProvider = ({ children }) => {
             }
         },
         'N': {
-            canMove: ({ type, rank, file, toRank, toFile }) => {
-                if (sameColorPieces(rank, file, toRank, toFile)) return false
+            canMove: ({ type, rank, file, toRank, toFile, game }) => {
+                if (sameColorPieces(rank, file, toRank, toFile, game)) return false
                 const dF = Math.abs(toFile - file)
                 const dR = Math.abs(toRank - rank)
                 return (dF === 2 && dR === 1) || (dF === 1 && dR === 2)
             }
         },
         'P': {
-            canMove: ({ type, rank, file, toRank, toFile }) => {
-                if (sameColorPieces(rank, file, toRank, toFile)) return false
+            canMove: ({ type, rank, file, toRank, toFile, game }) => {
+                if (sameColorPieces(rank, file, toRank, toFile, game)) return false
                 const dF = Math.abs(toFile - file)
                 const dR = toRank - rank
 
                 const isWhite = colorOf(type) === PieceColor.WHITE
 
                 // diagonal captures
-                if (diffColorPieces(rank, file, toRank, toFile)) {
+                if (diffColorPieces(rank, file, toRank, toFile, game)) {
                     return (dF === 1 && dR === (isWhite ? -1 : 1))
                 }
 
