@@ -64,7 +64,7 @@ export const GameContextProvider = ({ children }) => {
                 if (!compute[piece.toUpperCase()].canMove({ type: piece, rank, file, toRank: r, toFile: f })) continue
 
                 if (inCheck) {
-                    copy = structuredClone(gameRef.current)
+                    const copy = structuredClone(gameRef.current)
                     copy[rank][file] = 0
                     copy[r][f] = piece
                     if (computeChecks(kingRank, kingFile, colorOf(piece))) continue
