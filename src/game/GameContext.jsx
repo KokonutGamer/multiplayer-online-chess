@@ -44,10 +44,10 @@ export const GameContextProvider = ({ children }) => {
     const gameRef = useRef(game)
 
     // naive approach to checking king in check
-    function computeChecks(kingRank, kingFile, colorToMove) {
+    function computeChecks(kingRank, kingFile, colorToMove, game) {
         for (let r = 0; r < 8; r++) {
             for (let f = 0; f < 8; f++) {
-                const piece = gameRef.current[r][f]
+                const piece = game[r][f]
                 if (!piece || colorOf(piece) === colorToMove) continue
                 if (compute[piece.toUpperCase()].canMove({ type: piece, rank: r, file: f, toRank: kingRank, toFile: kingFile })) {
                     return true
@@ -63,22 +63,16 @@ export const GameContextProvider = ({ children }) => {
         for (let r = 0; r < 8; r++) {
             for (let f = 0; f < 8; f++) {
                 if (!compute[piece.toUpperCase()].canMove({ type: piece, rank, file, toRank: r, toFile: f })) continue
-
-                if (inCheck) {
-                    const copy = structuredClone(gameRef.current)
-                    copy[rank][file] = 0
-                    copy[r][f] = piece
-                    if (computeChecks(kingRank, kingFile, colorOf(piece))) continue
-                    pieceMoves.push({
-                        from: { rank, file },
-                        to: { rank: r, file: f }
-                    })
-                } else {
-                    pieceMoves.push({
-                        from: { rank, file },
-                        to: { rank: r, file: f }
-                    })
-                }
+                const copy = structuredClone(gameRef.current)
+                copy[rank][file] = 0
+                copy[r][f] = piece
+                if (kingRank === rank && kingFile === file ?
+                    computeChecks(r, f, colorOf(piece), copy) :
+                    computeChecks(kingRank, kingFile, colorOf(piece), copy)) continue
+                pieceMoves.push({
+                    from: { rank, file },
+                    to: { rank: r, file: f }
+                })
             }
         }
         return pieceMoves
@@ -104,7 +98,7 @@ export const GameContextProvider = ({ children }) => {
         console.log(kingPosition)
 
         // check if king is in check
-        let inCheck = computeChecks(kingPosition.rank, kingPosition.file, colorToMove)
+        let inCheck = computeChecks(kingPosition.rank, kingPosition.file, colorToMove, gameRef.current)
 
         console.log(`King in check? ${inCheck}`)
 
