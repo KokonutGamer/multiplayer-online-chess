@@ -56,10 +56,37 @@ export const GameContextProvider = ({ children }) => {
         return false
     }
 
+    function computeMoves(rank, file, kingRank, kingFile, inCheck) {
+        const moves = []
+        const piece = gameRef.current[rank][file]
+        for (let r = 0; r < 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                if (!compute[piece.toUpperCase()].canMove({ type: piece, rank, file, toRank: r, toFile: f })) continue
+
+                if (inCheck) {
+                    copy = structuredClone(gameRef.current)
+                    copy[rank][file] = 0
+                    copy[r][f] = piece
+                    if (computeChecks(kingRank, kingFile, colorOf(piece))) continue
+                    moves.push({
+                        from: { rank, file },
+                        to: { rank: r, file: f }
+                    })
+                } else {
+                    moves.push({
+                        from: { rank, file },
+                        to: { rank: r, file: f }
+                    })
+                }
+            }
+        }
+        return moves
+    }
+
     useEffect(() => {
         gameRef.current = game
 
-        console.log(gameRef.current)
+        console.log("Game", gameRef.current)
 
         // find position of king
         const kingPosition = { rank: -1, file: -1 }
@@ -73,21 +100,22 @@ export const GameContextProvider = ({ children }) => {
             }
         }
 
-        console.log(kingPosition)
-
         // check if king is in check
         let inCheck = computeChecks(kingPosition.rank, kingPosition.file, colorToMove)
 
         console.log(`King in check? ${inCheck}`)
 
+        const moves = []
         for (let r = 0; r < 8; r++) {
             for (let f = 0; f < 8; f++) {
                 const piece = gameRef.current[r][f];
                 if (!piece || colorOf(piece) !== colorToMove) continue
                 console.log(piece, r, f)
-
+                moves.push(...computeMoves(r, f, kingPosition.rank, kingPosition.file, inCheck))
             }
         }
+
+        console.log(moves)
 
     }, [game, moveCount])
 
