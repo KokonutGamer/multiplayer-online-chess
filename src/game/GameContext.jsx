@@ -40,6 +40,7 @@ export const GameContextProvider = ({ children }) => {
     )
 
     const [moveCount, setMoveCount] = useState(0)
+    const [moves, setMoves] = useState([])
     const gameRef = useRef(game)
 
     // naive approach to checking king in check
@@ -57,7 +58,7 @@ export const GameContextProvider = ({ children }) => {
     }
 
     function computeMoves(rank, file, kingRank, kingFile, inCheck) {
-        const moves = []
+        const pieceMoves = []
         const piece = gameRef.current[rank][file]
         for (let r = 0; r < 8; r++) {
             for (let f = 0; f < 8; f++) {
@@ -68,19 +69,19 @@ export const GameContextProvider = ({ children }) => {
                     copy[rank][file] = 0
                     copy[r][f] = piece
                     if (computeChecks(kingRank, kingFile, colorOf(piece))) continue
-                    moves.push({
+                    pieceMoves.push({
                         from: { rank, file },
                         to: { rank: r, file: f }
                     })
                 } else {
-                    moves.push({
+                    pieceMoves.push({
                         from: { rank, file },
                         to: { rank: r, file: f }
                     })
                 }
             }
         }
-        return moves
+        return pieceMoves
     }
 
     useEffect(() => {
@@ -107,21 +108,19 @@ export const GameContextProvider = ({ children }) => {
 
         console.log(`King in check? ${inCheck}`)
 
-        const moves = []
+        const currMoves = []
         for (let r = 0; r < 8; r++) {
             for (let f = 0; f < 8; f++) {
                 const piece = gameRef.current[r][f];
                 if (!piece || colorOf(piece) !== colorToMove) continue
                 console.log(piece, r, f)
-                moves.push(...computeMoves(r, f, kingPosition.rank, kingPosition.file, inCheck))
+                currMoves.push(...computeMoves(r, f, kingPosition.rank, kingPosition.file, inCheck))
             }
         }
-
-        console.log(moves)
+        // console.log(currMoves)
+        setMoves(currMoves)
 
     }, [game, moveCount])
-
-
 
     function gameReducer(prevGame, action) {
         switch (action.type) {
@@ -288,7 +287,7 @@ export const GameContextProvider = ({ children }) => {
     }
 
     return (
-        <GameContext.Provider value={{ game, moveCount, compute, handleMove }}>
+        <GameContext.Provider value={{ game, moveCount, compute, handleMove, moves }}>
             {children}
         </GameContext.Provider>
     )
