@@ -86,7 +86,7 @@ export const GameContextProvider = ({ children }) => {
     useEffect(() => {
         gameRef.current = game
 
-        console.log("Game", gameRef.current)
+        console.log(gameRef.current)
 
         // find position of king
         const kingPosition = { rank: -1, file: -1 }
@@ -99,6 +99,8 @@ export const GameContextProvider = ({ children }) => {
                 kingPosition.file = f
             }
         }
+
+        console.log(kingPosition)
 
         // check if king is in check
         let inCheck = computeChecks(kingPosition.rank, kingPosition.file, colorToMove)
