@@ -42,6 +42,20 @@ export const GameContextProvider = ({ children }) => {
     const [moveCount, setMoveCount] = useState(0)
     const gameRef = useRef(game)
 
+    // naive approach to checking king in check
+    function computeChecks(kingRank, kingFile, colorToMove) {
+        for (let r = 0; r < 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                const piece = gameRef.current[r][f]
+                if (!piece || colorOf(piece) === colorToMove) continue
+                if (compute[piece.toUpperCase()].canMove({ type: piece, rank: r, file: f, toRank: kingRank, toFile: kingFile })) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
     useEffect(() => {
         gameRef.current = game
 
@@ -62,21 +76,22 @@ export const GameContextProvider = ({ children }) => {
         console.log(kingPosition)
 
         // check if king is in check
-        let inCheck = false
-        for (let r = 0; r < 8; r++) {
-            for (let f = 0; f < 8; f++) {
-                const piece = gameRef.current[r][f]
-                if (!piece || colorOf(piece) === colorToMove) continue
-                console.log(piece, r, f)
-                if (compute[piece.toUpperCase()].canMove({type: piece, rank: r, file: f, toRank: kingPosition.rank, toFile: kingPosition.file})) {
-                    inCheck = true
-                }
-            }
-        }
+        let inCheck = computeChecks(kingPosition.rank, kingPosition.file, colorToMove)
 
         console.log(`King in check? ${inCheck}`)
 
+        for (let r = 0; r < 8; r++) {
+            for (let f = 0; f < 8; f++) {
+                const piece = gameRef.current[r][f];
+                if (!piece || colorOf(piece) !== colorToMove) continue
+                console.log(piece, r, f)
+
+            }
+        }
+
     }, [game, moveCount])
+
+
 
     function gameReducer(prevGame, action) {
         switch (action.type) {
@@ -113,7 +128,6 @@ export const GameContextProvider = ({ children }) => {
     }
 
     function sameColorPieces(rank, file, toRank, toFile) {
-        console.log(rank, file, toRank, toFile)
         const piece = gameRef.current[rank][file]
         const other = gameRef.current[toRank][toFile]
         if (!other) return false
