@@ -57,16 +57,16 @@ export const GameContextProvider = ({ children }) => {
         return false
     }
 
-    function computeMoves(rank, file, kingRank, kingFile, inCheck) {
+    function computeMoves(rank, file, kingRank, kingFile, game) {
         const pieceMoves = []
-        const piece = gameRef.current[rank][file]
+        const piece = game[rank][file]
         for (let r = 0; r < 8; r++) {
             for (let f = 0; f < 8; f++) {
-                if (!compute[piece.toUpperCase()].canMove({ type: piece, rank, file, toRank: r, toFile: f, game: gameRef.current })) continue
+                if (!compute[piece.toUpperCase()].canMove({ type: piece, rank, file, toRank: r, toFile: f, game })) continue
                 const copy = structuredClone(gameRef.current)
                 copy[rank][file] = 0
                 copy[r][f] = piece
-                if (kingRank === rank && kingFile === file ?
+                if ((kingRank === rank && kingFile === file) ?
                     computeChecks(r, f, colorOf(piece), copy) :
                     computeChecks(kingRank, kingFile, colorOf(piece), copy)) continue
                 pieceMoves.push({
@@ -107,11 +107,9 @@ export const GameContextProvider = ({ children }) => {
             for (let f = 0; f < 8; f++) {
                 const piece = gameRef.current[r][f];
                 if (!piece || colorOf(piece) !== colorToMove) continue
-                console.log(piece, r, f)
-                currMoves.push(...computeMoves(r, f, kingPosition.rank, kingPosition.file, inCheck))
+                currMoves.push(...computeMoves(r, f, kingPosition.rank, kingPosition.file, gameRef.current))
             }
         }
-        // console.log(currMoves)
         setMoves(currMoves)
 
     }, [game, moveCount])
