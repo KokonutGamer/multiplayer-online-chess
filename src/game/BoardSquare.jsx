@@ -5,7 +5,7 @@ import { useGame } from "./GameContext"
 import Overlay from "./Overlay"
 
 function BoardSquare({ rank, file, children }) {
-    const { moveCount, compute, handleMove, moves } = useGame()
+    const { moveCount, handleMove, moves } = useGame()
     const dark = (rank + file) % 2 === 1
 
     const [{ isOver, canDrop }, drop] = useDrop(

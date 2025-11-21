@@ -39,9 +39,18 @@ export const GameContextProvider = ({ children }) => {
         }
     )
 
+    const [castle, dispatchCastle] = useReducer(castleReducer, {
+        'K': { canCastle: true, rank: 7, file: 4 },
+        'KR': { canCastle: true, rank: 7, file: 7 },
+        'QR': { canCastle: true, rank: 7, file: 0 },
+        'k': { canCastle: true, rank: 0, file: 4 },
+        'kr': { canCastle: true, rank: 0, file: 7 },
+        'qr': { canCastle: true, rank: 0, file: 0 }
+    })
     const [moveCount, setMoveCount] = useState(0)
     const [moves, setMoves] = useState([])
     const gameRef = useRef(game)
+    const [gameEnd, setGameEnd] = useState("")
 
     // naive approach to checking king in check
     function computeChecks(kingRank, kingFile, colorToMove, game) {
@@ -80,7 +89,6 @@ export const GameContextProvider = ({ children }) => {
 
     useEffect(() => {
         gameRef.current = game
-
         console.log(gameRef.current)
 
         // find position of king
@@ -97,9 +105,8 @@ export const GameContextProvider = ({ children }) => {
 
         console.log(kingPosition)
 
-        // check if king is in check
+        // check if the king is in check
         let inCheck = computeChecks(kingPosition.rank, kingPosition.file, colorToMove, gameRef.current)
-
         console.log(`King in check? ${inCheck}`)
 
         const currMoves = []
@@ -111,6 +118,10 @@ export const GameContextProvider = ({ children }) => {
             }
         }
         setMoves(currMoves)
+
+        if (currMoves.length === 0) {
+            setGameEnd((inCheck) ? 'stalemate' : 'checkmate')
+        }
 
     }, [game, moveCount])
 
@@ -138,11 +149,46 @@ export const GameContextProvider = ({ children }) => {
         }
     }
 
+    function castleReducer(prevCastle, action) {
+        if (action.type in prevCastle) {
+            const newCastle = { ...prevCastle }
+            newCastle[action.type].canCastle = false
+            return newCastle
+        }
+        return prevCastle
+    }
+
     function handleMove(payload) {
         dispatch({
             type: 'move',
             payload
         })
+
+        switch (payload.type) {
+            case 'K':
+                dispatchCastle({ type: payload.type })
+                break;
+            case 'k':
+                dispatchCastle({ type: payload.type })
+                break;
+            case 'R':
+                if (castle['KR'].canCastle && castle['KR'].rank === payload.rank && castle['KR'].file === payload.file) {
+                    dispatchCastle({ type: 'KR' })
+                } else if (castle['QR'].canCastle && castle['QR'].rank === payload.rank && castle['QR'].file === payload.file) {
+                    dispatchCastle({ type: 'QR' })
+                }
+                break;
+            case 'r':
+                if (castle['kr'].canCastle && castle['kr'].rank === payload.rank && castle['kr'].file === payload.file) {
+                    dispatchCastle({ type: 'kr' })
+                } else if (castle['qr'].canCastle && castle['qr'].rank === payload.rank && castle['qr'].file === payload.file) {
+                    dispatchCastle({ type: 'qr' })
+                }
+                break;
+            default:
+                break;
+        }
+        console.log("castle", castle)
 
         // WARNING this state may update even if dispatch move doesn't work
         setMoveCount(prevMoveCount => prevMoveCount + 1)
@@ -279,7 +325,7 @@ export const GameContextProvider = ({ children }) => {
     }
 
     return (
-        <GameContext.Provider value={{ game, moveCount, compute, handleMove, moves }}>
+        <GameContext.Provider value={{ game, moveCount, handleMove, moves }}>
             {children}
         </GameContext.Provider>
     )
