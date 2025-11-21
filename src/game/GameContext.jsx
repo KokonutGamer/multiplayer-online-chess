@@ -126,9 +126,11 @@ export const GameContextProvider = ({ children }) => {
     }, [game, moveCount])
 
     function gameReducer(prevGame, action) {
+        const { type, rank, file, toRank, toFile } = action.payload
+        const gameClone = structuredClone(prevGame)
+        
         switch (action.type) {
             case 'move':
-                const { type, rank, file, toRank, toFile } = action.payload
                 if (!prevGame[rank][file]) {
                     console.error("ERROR: No piece exists on this square", rank, file)
                     return prevGame
@@ -139,9 +141,38 @@ export const GameContextProvider = ({ children }) => {
                     return prevGame
                 }
 
-                const gameClone = structuredClone(prevGame)
                 gameClone[rank][file] = 0
                 gameClone[toRank][toFile] = type
+                return gameClone
+            case 'castle':
+                if (!prevGame[rank][file]) {
+                    console.error("ERROR: No piece exists on this square", rank, file)
+                    return prevGame
+                }
+
+                if (prevGame[rank][file] !== type) {
+                    console.error("ERROR: The piece on the board does not match the specified piece", type)
+                    return prevGame
+                }
+
+                const dR = toRank - rank
+                if(dR !== 0) {
+                    console.error("ERROR: Castle results in a different rank", dR)
+                    return prevGame
+                }
+
+                // move king
+                gameClone[rank][file] = 0
+                gameClone[toRank][toFile] = type
+
+                const dF = toFile - file
+                if(dF === 2) {
+                    gameClone[toRank][toFile - 1] = gameClone[toRank][toFile + 1]
+                    gameClone[toRank][toFile + 1] = 0
+                } else if(dF === -2) {
+                    gameClone[toRank][toFile + 1] = gameClone[toRank][toFile - 2]
+                    gameClone[toRank][toFile - 2] = 0
+                }
                 return gameClone
             default:
                 console.error("ERROR: Unknown action type dispatched")
@@ -159,10 +190,31 @@ export const GameContextProvider = ({ children }) => {
     }
 
     function handleMove(payload) {
-        dispatch({
-            type: 'move',
-            payload
-        })
+        if(payload.type.toUpperCase() === PieceType.KING && payload.toRank - payload.rank === 0 && Math.abs(payload.toFile - payload.file) === 2) {
+            console.log("Dispatching castle")
+            dispatch({
+                type: 'castle',
+                payload
+            })
+
+            const colorToMove = colorOf(payload.type)
+            const kingsRook = (colorToMove === PieceColor.WHITE) ? 'KR' : 'kr'
+            const queensRook = (colorToMove === PieceColor.WHITE) ? 'QR' : 'qr'
+            dispatchCastle({ type: payload.type })
+            switch(Math.abs(payload.toFile - payload.file)) {
+                case 2:
+                    dispatchCastle({ type: kingsRook })
+                    break;
+                    case -2:
+                    dispatchCastle({ type: queensRook })
+                    break;
+            }
+        } else {
+            dispatch({
+                type: 'move',
+                payload
+            })
+        }
 
         switch (payload.type) {
             case 'K':
