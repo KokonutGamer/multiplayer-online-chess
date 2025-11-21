@@ -47,10 +47,13 @@ export const GameContextProvider = ({ children }) => {
         'kr': { canCastle: true, rank: 0, file: 7 },
         'qr': { canCastle: true, rank: 0, file: 0 }
     })
+    const [enPassant, setEnPassant] = useState(undefined)
     const [moveCount, setMoveCount] = useState(0)
     const [moves, setMoves] = useState([])
-    const gameRef = useRef(game)
     const [gameEnd, setGameEnd] = useState("")
+
+    const gameRef = useRef(game)
+    // const enPassantRef = useRef(enPassant)
 
     // naive approach to checking king in check
     function computeChecks(kingRank, kingFile, colorToMove, game) {
@@ -89,7 +92,8 @@ export const GameContextProvider = ({ children }) => {
 
     useEffect(() => {
         gameRef.current = game
-        console.log(gameRef.current)
+        // enPassantRef.current = enPassant
+        console.log(game)
 
         // find position of king
         const kingPosition = { rank: -1, file: -1 }
@@ -103,11 +107,8 @@ export const GameContextProvider = ({ children }) => {
             }
         }
 
-        console.log(kingPosition)
-
         // check if the king is in check
         let inCheck = computeChecks(kingPosition.rank, kingPosition.file, colorToMove, gameRef.current)
-        console.log(`King in check? ${inCheck}`)
 
         const currMoves = []
         for (let r = 0; r < 8; r++) {
@@ -126,37 +127,27 @@ export const GameContextProvider = ({ children }) => {
     }, [game, moveCount])
 
     function gameReducer(prevGame, action) {
-        const { type, rank, file, toRank, toFile } = action.payload
+        const { type, rank, file, toRank, toFile, enPassantRank, enPassantFile } = action.payload
         const gameClone = structuredClone(prevGame)
-        
+
+        if (!prevGame[rank][file]) {
+            console.error("ERROR: No piece exists on this square", rank, file)
+            return prevGame
+        }
+
+        if (prevGame[rank][file] !== type) {
+            console.error("ERROR: The piece on the board does not match the specified piece", type)
+            return prevGame
+        }
+
         switch (action.type) {
             case 'move':
-                if (!prevGame[rank][file]) {
-                    console.error("ERROR: No piece exists on this square", rank, file)
-                    return prevGame
-                }
-
-                if (prevGame[rank][file] !== type) {
-                    console.error("ERROR: The piece on the board does not match the specified piece", type)
-                    return prevGame
-                }
-
                 gameClone[rank][file] = 0
                 gameClone[toRank][toFile] = type
                 return gameClone
             case 'castle':
-                if (!prevGame[rank][file]) {
-                    console.error("ERROR: No piece exists on this square", rank, file)
-                    return prevGame
-                }
-
-                if (prevGame[rank][file] !== type) {
-                    console.error("ERROR: The piece on the board does not match the specified piece", type)
-                    return prevGame
-                }
-
                 const dR = toRank - rank
-                if(dR !== 0) {
+                if (dR !== 0) {
                     console.error("ERROR: Castle results in a different rank", dR)
                     return prevGame
                 }
@@ -166,13 +157,23 @@ export const GameContextProvider = ({ children }) => {
                 gameClone[toRank][toFile] = type
 
                 const dF = toFile - file
-                if(dF === 2) {
+                if (dF === 2) {
                     gameClone[toRank][toFile - 1] = gameClone[toRank][toFile + 1]
                     gameClone[toRank][toFile + 1] = 0
-                } else if(dF === -2) {
+                } else if (dF === -2) {
                     gameClone[toRank][toFile + 1] = gameClone[toRank][toFile - 2]
                     gameClone[toRank][toFile - 2] = 0
                 }
+                return gameClone
+            case 'en passant':
+
+                // move pawn
+                gameClone[rank][file] = 0
+                gameClone[toRank][toFile] = type
+
+                // capture
+                gameClone[enPassantRank][enPassantFile] = 0
+
                 return gameClone
             default:
                 console.error("ERROR: Unknown action type dispatched")
@@ -190,8 +191,11 @@ export const GameContextProvider = ({ children }) => {
     }
 
     function handleMove(payload) {
-        if(payload.type.toUpperCase() === PieceType.KING && payload.toRank - payload.rank === 0 && Math.abs(payload.toFile - payload.file) === 2) {
-            console.log("Dispatching castle")
+        const dR = payload.toRank - payload.rank
+        const dF = payload.toFile - payload.file
+        const isWhite = colorOf(payload.type) === PieceColor.WHITE
+        const isEnPassant = enPassant && payload.type.toUpperCase() === PieceType.PAWN && payload.toFile === enPassant.file && payload.toRank - enPassant.rank === (isWhite ? -1 : 1)
+        if (payload.type.toUpperCase() === PieceType.KING && dR === 0 && Math.abs(dF) === 2) {
             dispatch({
                 type: 'castle',
                 payload
@@ -201,19 +205,31 @@ export const GameContextProvider = ({ children }) => {
             const kingsRook = (colorToMove === PieceColor.WHITE) ? 'KR' : 'kr'
             const queensRook = (colorToMove === PieceColor.WHITE) ? 'QR' : 'qr'
             dispatchCastle({ type: payload.type })
-            switch(Math.abs(payload.toFile - payload.file)) {
+            switch (Math.abs(payload.toFile - payload.file)) {
                 case 2:
                     dispatchCastle({ type: kingsRook })
                     break;
-                    case -2:
+                case -2:
                     dispatchCastle({ type: queensRook })
                     break;
             }
+        } else if (isEnPassant) {
+            dispatch({
+                type: 'en passant',
+                payload: { ...payload, enPassantRank: enPassant.rank, enPassantFile: enPassant.file }
+            })
         } else {
             dispatch({
                 type: 'move',
                 payload
             })
+        }
+
+        // en passant
+        if (payload.type.toUpperCase() === PieceType.PAWN && Math.abs(payload.toRank - payload.rank) === 2) {
+            setEnPassant({ rank: payload.toRank, file: payload.toFile })
+        } else {
+            setEnPassant(undefined)
         }
 
         switch (payload.type) {
@@ -240,7 +256,6 @@ export const GameContextProvider = ({ children }) => {
             default:
                 break;
         }
-        console.log("castle", castle)
 
         // WARNING this state may update even if dispatch move doesn't work
         setMoveCount(prevMoveCount => prevMoveCount + 1)
@@ -370,9 +385,11 @@ export const GameContextProvider = ({ children }) => {
 
                 const isWhite = colorOf(type) === PieceColor.WHITE
 
-                // diagonal captures
-                if (diffColorPieces(rank, file, toRank, toFile, game)) {
-                    return (dF === 1 && dR === (isWhite ? -1 : 1))
+                // captures, both regular and en passant
+                if (dF === 1 && dR === (isWhite ? -1 : 1)) {
+                    return diffColorPieces(rank, file, toRank, toFile, game) ||
+                        enPassant && toFile === enPassant.file &&
+                        diffColorPieces(rank, file, enPassant.rank, enPassant.file, game);
                 }
 
                 // home rank
@@ -382,7 +399,7 @@ export const GameContextProvider = ({ children }) => {
                     return dF === 0 && dR > 0 && dR <= 2
                 }
 
-                return dF === 0 && dR === (isWhite ? -1 : 1)
+                return dF === 0 && dR === (isWhite ? -1 : 1) && !diffColorPieces(rank, file, toRank, toFile, game)
             }
         }
     }
