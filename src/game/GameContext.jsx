@@ -208,15 +208,26 @@ export const GameContextProvider = ({ children }) => {
         return colorOf(piece) !== colorOf(other)
     }
 
-    // TODO implement pins and checks
-    // TODO refactor compute to use some kind of cache as canMove renders each frame a piece is dragging
     const compute = {
         'K': {
             canMove: ({ type, rank, file, toRank, toFile, game }) => {
                 if (sameColorPieces(rank, file, toRank, toFile, game)) return false
-                const dF = Math.abs(toFile - file)
+                const dF = toFile - file
                 const dR = Math.abs(toRank - rank)
-                return (dF <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
+
+                const colorToMove = colorOf(type)
+                if (castle[type].canCastle && dR === 0 && Math.abs(dF) === 2 && !computeChecks(rank, file, colorToMove, game)) {
+                    const kingsRook = (colorToMove === PieceColor.WHITE) ? 'KR' : 'kr'
+                    const queensRook = (colorToMove === PieceColor.WHITE) ? 'QR' : 'qr'
+
+                    if (!game[rank][file + 1] && !game[rank][file + 2] && castle[kingsRook].canCastle && dR === 0 && dF === 2) {
+                        return !computeChecks(rank, file + 1, colorToMove, game) && !computeChecks(rank, file + 2, colorToMove, game)
+                    } else if (!game[rank][file - 1] && !game[rank][file - 2] && castle[queensRook].canCastle && dR === 0 && dF === -2) {
+                        return !computeChecks(rank, file - 1, colorToMove, game) && !computeChecks(rank, file - 2, colorToMove, game)
+                    }
+                }
+
+                return (Math.abs(dF) <= 1 && dR <= 1 && (dF !== 0 || dR !== 0))
             }
         },
         'Q': {
