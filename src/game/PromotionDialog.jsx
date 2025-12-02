@@ -16,12 +16,12 @@ function PromotionDialog({ open, onClose, promotionPiece, children }) {
             {children}
             <form action={onClose}>
                 <select name="promotion-piece" id="promotion-piece">
-                    <option value="K">Knight</option>
-                    <option value="B">Bishop</option>
-                    <option value="R">Rook</option>
-                    <option value="Q">Queen</option>
+                    <option value="k">Knight</option>
+                    <option value="b">Bishop</option>
+                    <option value="r">Rook</option>
+                    <option value="q">Queen</option>
                 </select>
-                <button type="submit">Cancel</button>
+                <button type="submit">Submit</button>
             </form>
         </dialog>
     )

@@ -38,7 +38,7 @@ function Board() {
     return (
         <>
             <PromotionDialog open={promoting} onClose={promotionFormAction} promotionPiece={promotionPiece}>
-                <p>Example dialog</p>
+                <p>Promotion Dialog</p>
             </PromotionDialog>
             <DndProvider backend={HTML5Backend}>
                 <div className="board">

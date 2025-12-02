@@ -162,7 +162,7 @@ export const GameContextProvider = ({ children }) => {
             return prevGame
         }
 
-        if (prevGame[rank][file] !== type) {
+        if (prevGame[rank][file] !== type && action.type !== "promote") {
             console.error("ERROR: The piece on the board does not match the specified piece", type)
             return prevGame
         }
@@ -203,9 +203,6 @@ export const GameContextProvider = ({ children }) => {
 
                 return gameClone
             case 'promote':
-                // TODO promote the pawn
-                let promotedType = type
-
                 // clear previous square
                 gameClone[rank][file] = 0
                 gameClone[toRank][toFile] = type
@@ -259,11 +256,11 @@ export const GameContextProvider = ({ children }) => {
         } else if (payload.type.toUpperCase() === PieceType.PAWN && (payload.toRank === 0 || payload.toRank === 7)) {
             setPromoting(true)
             const promotionType = await deferred.create()
+            payload.type = (colorOf(payload.type) === PieceColor.WHITE ? promotionType.toUpperCase() : promotionType)
             dispatch({
                 type: 'promote',
                 payload
             })
-            console.log("After dispatch - checking to see if dispatch finishes")
         } else {
             dispatch({
                 type: 'move',
