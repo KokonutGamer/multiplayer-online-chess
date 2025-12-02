@@ -5,20 +5,20 @@ import { useGame } from "./GameContext"
 import Overlay from "./Overlay"
 
 function BoardSquare({ rank, file, children }) {
-    const { moveCount, compute, handleMove } = useGame()
+    const { moveCount, handleMove, moves } = useGame()
     const dark = (rank + file) % 2 === 1
 
     const [{ isOver, canDrop }, drop] = useDrop(
         () => ({
             accept: Object.values(Constants).filter((piece) => (piece === piece.toUpperCase() ? moveCount % 2 === 0 : moveCount % 2 === 1)),
-            canDrop: (item) => compute[item.type.toUpperCase()].canMove({ ...item, toRank: rank, toFile: file }),
+            canDrop: (item) => moves.some(move => move.from.rank === item.rank && move.from.file === item.file && move.to.rank === rank && move.to.file === file),
             drop: (item) => handleMove({ ...item, toRank: rank, toFile: file }),
             collect: (monitor) => ({
                 isOver: !!monitor.isOver(),
                 canDrop: !!monitor.canDrop()
             })
         }),
-        [rank, file, moveCount]
+        [rank, file, moveCount, moves]
     )
 
     return (

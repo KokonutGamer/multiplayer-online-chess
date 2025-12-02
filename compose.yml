@@ -1,0 +1,7 @@
+services:
+  client:
+    build: .
+    image: multiplayer-online-chess-client
+    ports:
+      - "3000:80"
+
