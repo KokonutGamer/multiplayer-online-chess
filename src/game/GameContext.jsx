@@ -3,6 +3,19 @@ import { Constants, colorOf, PieceColor, PieceType } from "./Constants"
 
 const GameContext = createContext()
 
+function useDeferred() {
+    const resolveRef = useRef(null)
+
+    const create = () =>
+        new Promise((resolve) => {
+            resolveRef.current = resolve
+        })
+
+    const resolve = (value) => resolveRef.current?.(value)
+
+    return { create, resolve }
+}
+
 export const GameContextProvider = ({ children }) => {
     // TODO refactor to laod in different board states
     const [game, dispatch] = useReducer(
@@ -68,7 +81,7 @@ export const GameContextProvider = ({ children }) => {
         }
         return false
     }
-    
+
     function computeMoves(rank, file, kingRank, kingFile, game) {
         const pieceMoves = []
         const piece = game[rank][file]
@@ -79,8 +92,8 @@ export const GameContextProvider = ({ children }) => {
                 copy[rank][file] = 0
                 copy[r][f] = piece
                 if ((kingRank === rank && kingFile === file) ?
-                computeChecks(r, f, colorOf(piece), copy) :
-                computeChecks(kingRank, kingFile, colorOf(piece), copy)) continue
+                    computeChecks(r, f, colorOf(piece), copy) :
+                    computeChecks(kingRank, kingFile, colorOf(piece), copy)) continue
                 pieceMoves.push({
                     from: { rank, file },
                     to: { rank: r, file: f }
@@ -91,12 +104,18 @@ export const GameContextProvider = ({ children }) => {
     }
 
     const [promotionPiece, promotionFormAction] = useActionState(setPromotionPiece, null)
+    const deferred = useDeferred()
 
-    function setPromotionPiece(previousPromotionPiece, formData) {
-        console.log("Form submitted", formData)
+    async function setPromotionPiece(_, formData) {
         console.log("Piece", formData.get("promotion-piece"))
         return formData.get("promotion-piece")
     }
+
+    useEffect(() => {
+        if (promotionPiece) {
+            deferred.resolve(promotionPiece)
+        }
+    }, [promotionPiece]) 
 
     useEffect(() => {
         gameRef.current = game
@@ -207,7 +226,7 @@ export const GameContextProvider = ({ children }) => {
         return prevCastle
     }
 
-    function handleMove(payload) {
+    async function handleMove(payload) {
         const dR = payload.toRank - payload.rank
         const dF = payload.toFile - payload.file
         const isWhite = colorOf(payload.type) === PieceColor.WHITE
@@ -239,10 +258,12 @@ export const GameContextProvider = ({ children }) => {
             })
         } else if (payload.type.toUpperCase() === PieceType.PAWN && (payload.toRank === 0 || payload.toRank === 7)) {
             setPromoting(true)
+            const promotionType = await deferred.create()
             dispatch({
                 type: 'promote',
                 payload
             })
+            console.log("After dispatch - checking to see if dispatch finishes")
         } else {
             dispatch({
                 type: 'move',
