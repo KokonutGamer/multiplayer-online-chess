@@ -3,6 +3,7 @@ import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import Piece from "./Piece"
 import { useGame } from "./GameContext"
+import PromotionDialog from "./PromotionDialog"
 
 function renderSquare(rank, file, board) {
     return (
@@ -25,7 +26,7 @@ function renderPiece(rank, file, board) {
 }
 
 function Board() {
-    const { game } = useGame()
+    const { game, promoting, promotionPiece, promotionFormAction } = useGame()
 
     const squares = []
     for (let r = 0; r < 8; r++) {
@@ -35,11 +36,16 @@ function Board() {
     }
 
     return (
-        <DndProvider backend={HTML5Backend}>
-            <div className="board">
-                {squares}
-            </div>
-        </DndProvider>
+        <>
+            <PromotionDialog open={promoting} onClose={promotionFormAction} promotionPiece={promotionPiece}>
+                <p>Example dialog</p>
+            </PromotionDialog>
+            <DndProvider backend={HTML5Backend}>
+                <div className="board">
+                    {squares}
+                </div>
+            </DndProvider>
+        </>
     )
 }
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useReducer, useRef, useState } from "react"
+import { createContext, useActionState, useContext, useEffect, useReducer, useRef, useState } from "react"
 import { Constants, colorOf, PieceColor, PieceType } from "./Constants"
 
 const GameContext = createContext()
@@ -50,10 +50,10 @@ export const GameContextProvider = ({ children }) => {
     const [enPassant, setEnPassant] = useState(undefined)
     const [moveCount, setMoveCount] = useState(0)
     const [moves, setMoves] = useState([])
+    const [promoting, setPromoting] = useState(false)
     const [gameEnd, setGameEnd] = useState("")
 
     const gameRef = useRef(game)
-    // const enPassantRef = useRef(enPassant)
 
     // naive approach to checking king in check
     function computeChecks(kingRank, kingFile, colorToMove, game) {
@@ -68,7 +68,7 @@ export const GameContextProvider = ({ children }) => {
         }
         return false
     }
-
+    
     function computeMoves(rank, file, kingRank, kingFile, game) {
         const pieceMoves = []
         const piece = game[rank][file]
@@ -79,8 +79,8 @@ export const GameContextProvider = ({ children }) => {
                 copy[rank][file] = 0
                 copy[r][f] = piece
                 if ((kingRank === rank && kingFile === file) ?
-                    computeChecks(r, f, colorOf(piece), copy) :
-                    computeChecks(kingRank, kingFile, colorOf(piece), copy)) continue
+                computeChecks(r, f, colorOf(piece), copy) :
+                computeChecks(kingRank, kingFile, colorOf(piece), copy)) continue
                 pieceMoves.push({
                     from: { rank, file },
                     to: { rank: r, file: f }
@@ -88,6 +88,14 @@ export const GameContextProvider = ({ children }) => {
             }
         }
         return pieceMoves
+    }
+
+    const [promotionPiece, promotionFormAction] = useActionState(setPromotionPiece, null)
+
+    function setPromotionPiece(previousPromotionPiece, formData) {
+        console.log("Form submitted", formData)
+        console.log("Piece", formData.get("promotion-piece"))
+        return formData.get("promotion-piece")
     }
 
     useEffect(() => {
@@ -175,6 +183,15 @@ export const GameContextProvider = ({ children }) => {
                 gameClone[enPassantRank][enPassantFile] = 0
 
                 return gameClone
+            case 'promote':
+                // TODO promote the pawn
+                let promotedType = type
+
+                // clear previous square
+                gameClone[rank][file] = 0
+                gameClone[toRank][toFile] = type
+
+                return gameClone
             default:
                 console.error("ERROR: Unknown action type dispatched")
                 return prevGame
@@ -194,7 +211,9 @@ export const GameContextProvider = ({ children }) => {
         const dR = payload.toRank - payload.rank
         const dF = payload.toFile - payload.file
         const isWhite = colorOf(payload.type) === PieceColor.WHITE
-        const isEnPassant = enPassant && payload.type.toUpperCase() === PieceType.PAWN && payload.toFile === enPassant.file && payload.toRank - enPassant.rank === (isWhite ? -1 : 1)
+        const isEnPassant = enPassant && payload.type.toUpperCase() === PieceType.PAWN &&
+            payload.toFile === enPassant.file && payload.toRank - enPassant.rank === (isWhite ? -1 : 1)
+
         if (payload.type.toUpperCase() === PieceType.KING && dR === 0 && Math.abs(dF) === 2) {
             dispatch({
                 type: 'castle',
@@ -218,6 +237,12 @@ export const GameContextProvider = ({ children }) => {
                 type: 'en passant',
                 payload: { ...payload, enPassantRank: enPassant.rank, enPassantFile: enPassant.file }
             })
+        } else if (payload.type.toUpperCase() === PieceType.PAWN && (payload.toRank === 0 || payload.toRank === 7)) {
+            setPromoting(true)
+            dispatch({
+                type: 'promote',
+                payload
+            })
         } else {
             dispatch({
                 type: 'move',
@@ -232,6 +257,7 @@ export const GameContextProvider = ({ children }) => {
             setEnPassant(undefined)
         }
 
+        // sets a piece's ability to castle
         switch (payload.type) {
             case 'K':
                 dispatchCastle({ type: payload.type })
@@ -405,7 +431,7 @@ export const GameContextProvider = ({ children }) => {
     }
 
     return (
-        <GameContext.Provider value={{ game, moveCount, handleMove, moves }}>
+        <GameContext.Provider value={{ game, moveCount, moves, promoting, promotionPiece, handleMove, promotionFormAction }}>
             {children}
         </GameContext.Provider>
     )
