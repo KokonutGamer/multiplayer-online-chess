@@ -1,7 +1,13 @@
 services:
-  client:
-    build: .
+  websocket-server:
+    build: ./server
+    image: multiplayer-online-chess-server
+    ports:
+      - "8080:8080"
+  web-client:
+    build: ./client
     image: multiplayer-online-chess-client
     ports:
       - "3000:80"
-
+    depends_on:
+      - server
