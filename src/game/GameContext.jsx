@@ -115,7 +115,7 @@ export const GameContextProvider = ({ children }) => {
         if (promotionPiece) {
             deferred.resolve(promotionPiece)
         }
-    }, [promotionPiece]) 
+    }, [promotionPiece])
 
     useEffect(() => {
         gameRef.current = game
@@ -437,9 +437,9 @@ export const GameContextProvider = ({ children }) => {
                 }
 
                 // home rank
-                if (isWhite && rank === 6) {
+                if (isWhite && rank === 6 && !diffColorPieces(rank, file, toRank, toFile, game)) {
                     return dF === 0 && dR < 0 && dR >= -2
-                } else if (!isWhite && rank === 1) {
+                } else if (!isWhite && rank === 1 && !diffColorPieces(rank, file, toRank, toFile, game)) {
                     return dF === 0 && dR > 0 && dR <= 2
                 }
 
