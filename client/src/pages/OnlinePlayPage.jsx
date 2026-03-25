@@ -5,12 +5,33 @@ function OnlinePlayPage() {
     const stompClientRef = useRef(null)
     const [isConnected, setIsConnected] = useState(false)
 
+
     useEffect(() => {
+        let userId = null
+
+        async function fetchUserId() {
+            // check if userId is already cached
+            if (sessionStorage.getItem("userId")) {
+                return sessionStorage.getItem("userId")
+            }
+
+            // request a new UUID
+            const response = await fetch(`http://${import.meta.env.VITE_API_DOMAIN}/users/generate-id`)
+            if(!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`)
+            }
+
+            // save userId to session storage
+            const data = await response.json()
+            sessionStorage.setItem("userId", data.userId)
+            return data.userId
+        }
+
+        userId = fetchUserId()
+
         const stompClient = new Client({
             brokerURL: `ws://${import.meta.env.VITE_API_DOMAIN}/ws`,
-            connectHeaders: {
-                userId: 'abc'
-            },
+            connectHeaders: { userId },
             debug: (msg) => console.log(`STOMP debug: ${msg}`),
             reconnectDelay: 5000,
             heartbeatIncoming: 20000,
@@ -47,7 +68,7 @@ function OnlinePlayPage() {
                 await stompClientRef.current.deactivate()
             }
         }
-    }, []) // runs only mount
+    }, []) // runs only on mount
 
     const hostRequest = () => {
         if (stompClientRef.current && stompClientRef.current.connected) {
