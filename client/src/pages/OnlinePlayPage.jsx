@@ -17,7 +17,7 @@ function OnlinePlayPage() {
 
             // request a new UUID
             const response = await fetch(`http://${import.meta.env.VITE_API_DOMAIN}/users/generate-id`)
-            if(!response.ok) {
+            if (!response.ok) {
                 throw new Error(`HTTP error: ${response.status}`)
             }
 
@@ -27,18 +27,17 @@ function OnlinePlayPage() {
             return data.userId
         }
 
-        userId = fetchUserId()
+        fetchUserId().then((id) => console.log(`userId=${id}`))
 
         const stompClient = new Client({
             brokerURL: `ws://${import.meta.env.VITE_API_DOMAIN}/ws`,
-            connectHeaders: { userId },
+            connectHeaders: { userId: sessionStorage.getItem("userId") },
             debug: (msg) => console.log(`STOMP debug: ${msg}`),
             reconnectDelay: 5000,
             heartbeatIncoming: 20000,
             heartbeatOutgoing: 20000
         })
 
-        // TODO within this onConnect property, we will generate a UUID for this user
         stompClient.onConnect = (frame) => {
             setIsConnected(true)
             console.log("Connected")
@@ -63,9 +62,9 @@ function OnlinePlayPage() {
         stompClientRef.current = stompClient
 
         // clean up STOMP connection
-        return async () => {
+        return () => {
             if (stompClientRef.current) {
-                await stompClientRef.current.deactivate()
+                stompClientRef.current.deactivate()
             }
         }
     }, []) // runs only on mount
@@ -75,7 +74,7 @@ function OnlinePlayPage() {
             stompClientRef.current.publish({
                 destination: '/app/game/host',
                 body: JSON.stringify({
-                    userId: "054be67d-d05f-4187-a75b-601d4c9d5339" // TODO part of client connect
+                    userId: sessionStorage.getItem("userId")
                 })
             })
         }
@@ -84,7 +83,7 @@ function OnlinePlayPage() {
     return (
         <div>
             <h1>Play online</h1>
-            <button onClick={hostRequest}></button>
+            <button onClick={hostRequest}>Host a Game</button>
         </div>
     )
 }
