@@ -1,39 +1,13 @@
 services:
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    ports:
-      - "9092:9092"
-    environment:
-      # KRaft config
-      KAFKA_KRAFT_MODE: "true"
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      CLUSTER_ID: MkU3OEVBNTcwNTJENDM1Tk
-
-      # network config
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-
-      # storage config
-      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
-      KAFKA_LOG_RETENTION_HOURS: 168
-
-      # topic config
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
   websocket-server:
     build: ./server
+    container_name: websocket-server
     image: multiplayer-online-chess-server
     ports:
       - "8080:8080"
   web-client:
     build: ./client
+    container_name: chess-client
     image: multiplayer-online-chess-client
     ports:
       - "3000:80"
