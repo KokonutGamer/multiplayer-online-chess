@@ -16,7 +16,6 @@ public class GameController {
 
     @MessageMapping("host")
     public void hostGame(@Payload HostRequest hostMessage) {
-        log.info("Host request received!");
-        log.info(hostMessage.toString());
+        log.debug("Host request from user {}", hostMessage.userId());
     }
 }
