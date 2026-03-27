@@ -14,6 +14,7 @@ import me.lapingcao.chess_web_socket_server.messages.DrawRequest;
 import me.lapingcao.chess_web_socket_server.messages.HostRequest;
 import me.lapingcao.chess_web_socket_server.messages.JoinRequest;
 import me.lapingcao.chess_web_socket_server.messages.MoveRequest;
+import me.lapingcao.chess_web_socket_server.messages.ResignRequest;
 import me.lapingcao.chess_web_socket_server.repositories.GameStateRepository;
 
 @Controller
@@ -51,7 +52,7 @@ public class GameController {
     }
 
     @MessageMapping("{gameId}/resign")
-    public void resignGame(@DestinationVariable UUID gameId) {
-        log.debug("Resign game request for game with ID {}", gameId);
+    public void resignGame(@DestinationVariable UUID gameId, @Payload ResignRequest resignMessage) {
+        log.debug("Resign game request for game with ID {} from user {}", gameId, resignMessage.userId());
     }
 }
