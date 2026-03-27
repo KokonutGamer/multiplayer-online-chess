@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.lapingcao.chess_web_socket_server.messages.HostRequest;
+import me.lapingcao.chess_web_socket_server.messages.MoveRequest;
 import me.lapingcao.chess_web_socket_server.repositories.InMemoryGameStateRepository;
 
 @Controller
@@ -36,7 +37,7 @@ public class GameController {
     }
     
     @MessageMapping("{gameId}/move")
-    public void movePiece(@DestinationVariable UUID gameId) {
+    public void movePiece(@DestinationVariable UUID gameId, @Payload MoveRequest moveRequest) {
         log.debug("Move piece request for game with ID {}", gameId);
     }
     
