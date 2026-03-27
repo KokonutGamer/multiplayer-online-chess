@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.lapingcao.chess_web_socket_server.messages.CancelRequest;
+import me.lapingcao.chess_web_socket_server.messages.DrawRequest;
 import me.lapingcao.chess_web_socket_server.messages.HostRequest;
 import me.lapingcao.chess_web_socket_server.messages.JoinRequest;
 import me.lapingcao.chess_web_socket_server.messages.MoveRequest;
@@ -39,13 +40,14 @@ public class GameController {
     }
 
     @MessageMapping("{gameId}/move")
-    public void movePiece(@DestinationVariable UUID gameId, @Payload MoveRequest moveRequest) {
+    public void movePiece(@DestinationVariable UUID gameId, @Payload MoveRequest moveMessage) {
         log.debug("Move piece request for game with ID {}", gameId);
+        log.debug("Moving from square {} to {}", moveMessage.move().from(), moveMessage.move().to());
     }
 
     @MessageMapping("{gameId}/draw")
-    public void drawGame(@DestinationVariable UUID gameId) {
-        log.debug("Draw game request for game with ID {}", gameId);
+    public void drawGame(@DestinationVariable UUID gameId, @Payload DrawRequest drawMessage) {
+        log.debug("Draw game request for game with ID {} from user {}", gameId, drawMessage.userId());
     }
 
     @MessageMapping("{gameId}/resign")
