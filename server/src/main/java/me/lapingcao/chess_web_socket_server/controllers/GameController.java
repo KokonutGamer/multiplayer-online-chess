@@ -21,21 +21,6 @@ public class GameController {
 
     private final GameStateRepository gameStateRepository;
 
-    @MessageMapping("host")
-    public void hostGame(Principal principal) {
-        log.debug("Host request from user {}", principal.getName());
-    }
-
-    @MessageMapping("{gameId}/cancel")
-    public void cancelGame(@DestinationVariable UUID gameId, Principal principal) {
-        log.debug("Cancel game request for game with ID {} for user {}", gameId, principal.getName());
-    }
-
-    @MessageMapping("{gameId}/join")
-    public void joinGame(@DestinationVariable UUID gameId, Principal principal) {
-        log.debug("Join game request for game with ID {} from user {}", gameId, principal.getName());
-    }
-
     @MessageMapping("{gameId}/move")
     public void movePiece(@DestinationVariable UUID gameId, @Payload Move move, Principal principal) {
         log.debug("Move piece request for game with ID {}", gameId);
