@@ -10,12 +10,15 @@ import org.springframework.stereotype.Controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.lapingcao.chess_web_socket_server.services.MatchmakingService;
 
 @Controller
 @Slf4j
 @RequiredArgsConstructor
 @MessageMapping("matchmaking")
 public class MatchmakingController {
+
+    private final MatchmakingService matchmakingService;
 
     /**
      * TODO document hostGame method
@@ -33,6 +36,7 @@ public class MatchmakingController {
     @SendToUser(destinations="/queue/matchmaking", broadcast=false)
     public void hostGame(Principal principal) {
         log.debug("Host request from user {}", principal.getName());
+        matchmakingService.hostGame(UUID.fromString(principal.getName()));
     }
 
     @MessageMapping("join")

@@ -31,4 +31,11 @@ public interface GameStateRepository {
      * @param gameId
      */
     void delete(UUID gameId);
+
+    /**
+     * TODO document generateNewId method
+     * 
+     * @return
+     */
+    UUID generateNewId();
 }
