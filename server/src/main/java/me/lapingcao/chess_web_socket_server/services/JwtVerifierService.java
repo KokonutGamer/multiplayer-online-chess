@@ -33,7 +33,10 @@ public class JwtVerifierService {
      * @throws JwtException
      */
     public Jws<Claims> verify(String jwt) throws JwtException {
+        // create a new secret key using the database's JWT secret bytes (encoded in UTF_8)
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
+        // verify the JWT and expand the signed claims
         return Jwts.parser().verifyWith(key).build().parseSignedClaims(jwt);
     }
 }
