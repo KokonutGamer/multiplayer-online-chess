@@ -7,59 +7,59 @@ function OnlinePlayPage() {
 
 
     useEffect(() => {
-        let userId = null
-
-        async function fetchUserId() {
-            // check if userId is already cached
-            if (sessionStorage.getItem("userId")) {
-                return sessionStorage.getItem("userId")
+        async function initializeConnection() {
+            // check if accessToken is already cached
+            if (sessionStorage.getItem("accessToken")) {
+                return sessionStorage.getItem("accessToken")
             }
 
-            // request a new UUID
-            const response = await fetch(`http://${import.meta.env.VITE_API_DOMAIN}/users/generate-id`)
+            // request a new access token
+            const response = await fetch(`http://${import.meta.env.VITE_API_DOMAIN}/users/generate-id`, {
+                method: 'POST'
+            })
             if (!response.ok) {
                 throw new Error(`HTTP error: ${response.status}`)
             }
 
-            // save userId to session storage
+            // save accessToken to session storage
             const data = await response.json()
-            sessionStorage.setItem("userId", data.userId)
-            return data.userId
+            sessionStorage.setItem("accessToken", data.accessToken)
+            console.log(`fetchAccessToken(): accessToken=${sessionStorage.getItem("accessToken")}`)
+
+            const stompClient = new Client({
+                brokerURL: `ws://${import.meta.env.VITE_API_DOMAIN}/ws`,
+                connectHeaders: { Authorization: `Bearer ${sessionStorage.getItem("accessToken")}` },
+                debug: (msg) => console.log(`STOMP debug: ${msg}`),
+                reconnectDelay: 5000,
+                heartbeatIncoming: 20000,
+                heartbeatOutgoing: 20000
+            })
+    
+            stompClient.onConnect = (frame) => {
+                setIsConnected(true)
+                console.log("Connected")
+                console.log(`Additional details: ${frame.body}`)
+            }
+    
+            stompClient.onWebSocketError = (error) => {
+                console.error("Error with websocket", error)
+            }
+    
+            stompClient.onStompError = (frame) => {
+                console.error(`Broker reported error: ${frame.headers['message']}`)
+                console.error(`Additional details: ${frame.body}`)
+            }
+    
+            stompClient.onDisconnect = () => {
+                setIsConnected(false)
+            }
+    
+            // establish a connection to the server
+            stompClient.activate()
+            stompClientRef.current = stompClient
         }
 
-        fetchUserId().then((id) => console.log(`userId=${id}`))
-
-        const stompClient = new Client({
-            brokerURL: `ws://${import.meta.env.VITE_API_DOMAIN}/ws`,
-            connectHeaders: { userId: sessionStorage.getItem("userId") },
-            debug: (msg) => console.log(`STOMP debug: ${msg}`),
-            reconnectDelay: 5000,
-            heartbeatIncoming: 20000,
-            heartbeatOutgoing: 20000
-        })
-
-        stompClient.onConnect = (frame) => {
-            setIsConnected(true)
-            console.log("Connected")
-            console.log(`Additional details: ${frame.body}`)
-        }
-
-        stompClient.onWebSocketError = (error) => {
-            console.error("Error with websocket", error)
-        }
-
-        stompClient.onStompError = (frame) => {
-            console.error(`Broker reported error: ${frame.headers['message']}`)
-            console.error(`Additional details: ${frame.body}`)
-        }
-
-        stompClient.onDisconnect = () => {
-            setIsConnected(false)
-        }
-
-        // establish a connection to the server
-        stompClient.activate()
-        stompClientRef.current = stompClient
+        initializeConnection()
 
         // clean up STOMP connection
         return () => {
@@ -72,10 +72,7 @@ function OnlinePlayPage() {
     const hostRequest = () => {
         if (stompClientRef.current && stompClientRef.current.connected) {
             stompClientRef.current.publish({
-                destination: '/app/game/host',
-                body: JSON.stringify({
-                    userId: sessionStorage.getItem("userId")
-                })
+                destination: '/app/matchmaking/host'
             })
         }
     }
