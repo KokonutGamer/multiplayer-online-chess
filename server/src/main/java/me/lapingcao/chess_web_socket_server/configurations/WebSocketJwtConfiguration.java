@@ -1,5 +1,7 @@
 package me.lapingcao.chess_web_socket_server.configurations;
 
+import java.util.Collections;
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -39,7 +41,7 @@ public class WebSocketJwtConfiguration implements WebSocketMessageBrokerConfigur
     private final JwtVerifierService jwtVerifierService;
 
     /**
-     * Registers a custom JWT authentication interceptor for 
+     * Registers a custom JWT authentication interceptor for
      */
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
@@ -50,18 +52,18 @@ public class WebSocketJwtConfiguration implements WebSocketMessageBrokerConfigur
 
                 // intercept only CONNECT commands to extract a Principal
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    
+
                     // retrieve the authorization header and make sure it contains a bearer token
                     String authHeader = accessor.getFirstNativeHeader("Authorization");
                     if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
                         String token = authHeader.substring(7); // extract the JWT
-                        
+
                         // attempt to verify the token using the application's secret key
                         try {
                             Jws<Claims> signature = jwtVerifierService.verify(token);
                             Claims claims = signature.getPayload();
                             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                    claims, null);
+                                    claims.getSubject(), null, Collections.emptyList()); // TODO design application authorities later
                             accessor.setUser(authToken);
                         } catch (JwtException e) {
                             log.error("Failed to decrypt JWT {}", token);
