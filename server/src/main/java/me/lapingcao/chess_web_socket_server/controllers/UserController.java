@@ -20,7 +20,7 @@ import me.lapingcao.chess_web_socket_server.services.JwtVerifierService;
 @Slf4j
 @RequiredArgsConstructor
 @RequestMapping("users")
-@CrossOrigin(originPatterns = { "http://*localhost:[*]" }, methods = { RequestMethod.GET })
+@CrossOrigin(originPatterns = { "http://*localhost:[*]" }, methods = { RequestMethod.POST })
 public class UserController {
 
     /**
