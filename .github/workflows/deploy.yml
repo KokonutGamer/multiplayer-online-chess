@@ -1,0 +1,47 @@
+name: Deploy Branch to AWS
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Grab the code
+        uses: actions/checkout@v6 
+
+      - name: Get Branch Name
+        id: branch-name
+        run: |
+          SAFE_BRANCH=$(echo "${GITHUB_REF#refs/heads/}" | tr '/' '-')
+          echo "BRANCH=$SAFE_BRANCH" >> $GITHUB_ENV
+
+      - name: Log in to AWS
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t chess-frontend:${{ env.BRANCH }} .
+          aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 102431379074.dkr.ecr.us-west-2.amazonaws.com
+          docker tag chess-frontend:${{ env.BRANCH }} 102431379074.dkr.ecr.us-west-2.amazonaws.com/chess-frontend:${{ env.BRANCH }}
+          docker push 102431379074.dkr.ecr.us-west-2.amazonaws.com/chess-frontend:${{ env.BRANCH }}
+
+      - name: Deploy Dynamic ECS Service
+        run: |
+          aws ecs create-express-gateway-service \
+            --cluster default \
+            --service-name chess-${{ env.BRANCH }}-site \
+            --region us-west-2 \
+            --execution-role-arn arn:aws:iam::102431379074:role/ecsTaskExecutionRole \
+            --infrastructure-role-arn arn:aws:iam::102431379074:role/ecsExpressInfrastructureRole \
+            --primary-container '{
+                "image": "102431379074.dkr.ecr.us-west-2.amazonaws.com/chess-frontend:${{ env.BRANCH }}",
+                "containerPort": 80
+            }' \
+            --monitor-resources
