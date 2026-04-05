@@ -43,7 +43,6 @@ jobs:
             aws ecs update-service \
               --cluster default \
               --service $SERVICE_NAME \
-              --primary-container "{\"image\": \"$IMAGE_URI\", \"containerPort\": 80}" \
               --force-new-deployment
           else
             echo "New branch detected! Creating fresh environment..."
