@@ -53,13 +53,5 @@ jobs:
               --region us-west-2 \
               --execution-role-arn arn:aws:iam::102431379074:role/ecsTaskExecutionRole \
               --infrastructure-role-arn arn:aws:iam::102431379074:role/ecsExpressInfrastructureRole \
-              --primary-container "{\"image\": \"$IMAGE_URI\", \"containerPort\": 80}" \
-              --monitor-resources
+              --primary-container "{\"image\": \"$IMAGE_URI\", \"containerPort\": 80}"
           fi
-
-      - name: Show Live URL
-        run: |
-          URL=$(aws ecs describe-services --cluster default --services chess-${{ env.BRANCH }}-site --query "services[0].deployments[0].externalUrl" --output text)
-          echo "--------------------------------------------------"
-          echo "YOUR BRANCH IS LIVE AT: $URL"
-          echo "--------------------------------------------------"
