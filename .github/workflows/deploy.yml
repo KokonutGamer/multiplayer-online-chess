@@ -34,14 +34,32 @@ jobs:
 
       - name: Deploy Dynamic ECS Service
         run: |
-          aws ecs create-express-gateway-service \
-            --cluster default \
-            --service-name chess-${{ env.BRANCH }}-site \
-            --region us-west-2 \
-            --execution-role-arn arn:aws:iam::102431379074:role/ecsTaskExecutionRole \
-            --infrastructure-role-arn arn:aws:iam::102431379074:role/ecsExpressInfrastructureRole \
-            --primary-container '{
-                "image": "102431379074.dkr.ecr.us-west-2.amazonaws.com/chess-frontend:${{ env.BRANCH }}",
-                "containerPort": 80
-            }' \
-            --monitor-resources
+          SERVICE_NAME="chess-${{ env.BRANCH }}-site"
+          IMAGE_URI="102431379074.dkr.ecr.us-west-2.amazonaws.com/chess-frontend:${{ env.BRANCH }}"
+          
+          # Check if the service already exists
+          if aws ecs describe-services --cluster default --services $SERVICE_NAME --query "services[0].status" --output text | grep -q "ACTIVE"; then
+            echo "Service exists! Updating existing branch..."
+            aws ecs update-service \
+              --cluster default \
+              --service $SERVICE_NAME \
+              --primary-container "{\"image\": \"$IMAGE_URI\", \"containerPort\": 80}" \
+              --force-new-deployment
+          else
+            echo "New branch detected! Creating fresh environment..."
+            aws ecs create-express-gateway-service \
+              --cluster default \
+              --service-name $SERVICE_NAME \
+              --region us-west-2 \
+              --execution-role-arn arn:aws:iam::102431379074:role/ecsTaskExecutionRole \
+              --infrastructure-role-arn arn:aws:iam::102431379074:role/ecsExpressInfrastructureRole \
+              --primary-container "{\"image\": \"$IMAGE_URI\", \"containerPort\": 80}" \
+              --monitor-resources
+          fi
+
+      - name: Show Live URL
+        run: |
+          URL=$(aws ecs describe-services --cluster default --services chess-${{ env.BRANCH }}-site --query "services[0].deployments[0].externalUrl" --output text)
+          echo "--------------------------------------------------"
+          echo "YOUR BRANCH IS LIVE AT: $URL"
+          echo "--------------------------------------------------"
